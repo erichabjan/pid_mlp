@@ -5,8 +5,4 @@ Inside of the `charged_mlp.py` and `neutral_mlp.py` scripts the MLP models of th
 
 As for manual PID, all analysis is carried out in the `manual_pid.py` script. This includes both dE/dx - p and timing cuts, both of which are optimized in this notebook with the optimal dE/dx - p cuts being saved to the `paper_plots` folder along with the manual PID results. Similarly, all plots can be recreated in the `paper_plots.ipynb` notebook.
 
-This code accompanies the paper:
-
-**"Particle identification in the GlueX detector using a multi-layer perceptron"**  
-[Eric Habjan, Richard Dube, James McIntyre, Mezmur Edo, Richard Jones]  
-[arXiv:2505.14706](https://arxiv.org/abs/2505.14706)
+This code accompanies the paper: **"Particle identification in the GlueX detector using a multi-layer perceptron"** ([arXiv:2505.14706](https://arxiv.org/abs/2505.14706)). 
