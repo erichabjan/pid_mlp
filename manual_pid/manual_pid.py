@@ -18,6 +18,9 @@ import math
 from sklearn import svm
 from scipy.optimize import minimize, curve_fit
 
+### suffix for saved data
+suffix = '_he'
+
 
 ### Import data
 
@@ -510,13 +513,13 @@ manual_c[manual_c == 0] = 13
 
 save_path = '/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/pid_mpl/paper_plots/'
 
-np.save(save_path + 'true_manual_pid.npy', true_c)
-np.save(save_path + 'predicted_manual_pid.npy', manual_c)
+np.save(save_path + 'true_manual_pid' + suffix + '.npy', true_c)
+np.save(save_path + 'predicted_manual_pid' + suffix + '.npy', manual_c)
 
 p = np.array(np.sqrt(test_charged['px']**2 + test_charged['py']**2 + test_charged['pz']**2))
 dedx = np.array(test_charged['dEdxCDC'])
 
-np.save(save_path + 'charged_momentum.npy', p)
-np.save(save_path + 'charged_dedx.npy', dedx)
+np.save(save_path + 'charged_momentum' + suffix + '.npy', p)
+np.save(save_path + 'charged_dedx' + suffix + '.npy', dedx)
 
-np.save(save_path + 'manual_pid_cuts.npy', result.x)
+np.save(save_path + 'manual_pid_cuts' + suffix + '.npy', result.x)

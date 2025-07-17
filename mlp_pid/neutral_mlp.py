@@ -27,10 +27,10 @@ file = data_name + "Test_LE_sorted_neutral.hdf5"
 filename = base_path + file
 test = pd.read_hdf(filename, 'event1')
 
-trainx, trainy = pd.DataFrame.to_numpy(train.drop('ptype', axis=1)), pd.DataFrame.to_numpy(train['ptype']).astype(np.int64)
-testx, testy = pd.DataFrame.to_numpy(test.drop(['ptype', 'group', 'true ptype'], axis=1)), pd.DataFrame.to_numpy(test['true ptype']).astype(np.int64)
+trainx, trainy = np.array(train.drop('ptype', axis=1)), np.array(train['ptype']).astype(np.int64)
+testx, testy = np.array(test.drop(['ptype', 'group', 'true ptype'], axis=1)), np.array(test['true ptype']).astype(np.int64)
 
-group_test = pd.DataFrame.to_numpy(test['group']).astype(np.int64)
+group_test = np.array(test['group']).astype(np.int64)
 
 ### Replace particle tags with integers
 
@@ -94,4 +94,5 @@ model.fit(tf_train, epochs=50, validation_data=tf_test, callbacks=[callback], ve
 
 ### Save Model
 
-model.save('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Neutral_model.keras')
+suffix = '_he'
+model.save('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Neutral_model' + suffix + '.keras')

@@ -27,14 +27,15 @@ file = data_name + "Test_LE_sorted_charged.hdf5"
 filename = base_path + file
 test = pd.read_hdf(filename, 'event1')
 
-trainx, trainy = pd.DataFrame.to_numpy(train.drop('ptype', axis=1)), np.array(train['ptype'])
-testx, testy = pd.DataFrame.to_numpy(test.drop(['ptype', 'group', 'true ptype'], axis=1)), np.array(test['true ptype'])
+trainx, trainy = np.array(train.drop('ptype', axis=1)), np.array(train['ptype'])
+testx, testy = np.array(test.drop(['ptype', 'group', 'true ptype'], axis=1)), np.array(test['true ptype'])
 
 group_test = np.array(test['group'])
 
 ### Replace particle tags with integers
 
-ptypes = np.array([np.int64(train['ptype'][i]) for i in range(240000, len(train), 80000)])
+#ptypes = np.array([np.int64(train['ptype'][i]) for i in range(240000, len(train), 80000)])
+ptypes = np.array([2212, 321, 211, -13, -11, -2212, -321, -211, 13, 11])
 ptype = {2212:0, -2212:1, 321:2, -321:3, 11:4, -11:5, 211:6, -211:7, 13:8, -13:9}
 
 trainy = np.array([ptype[trainy[i]] for i in range(len(trainy))])
@@ -58,16 +59,16 @@ tf_test = tf_test.prefetch(tf.data.AUTOTUNE)
 def model_func(hp):
     model = tf.keras.models.Sequential()
 
-    #for i in range(1, hp.Int(f"layers", min_value=2, max_value=7)):
-     #   model.add(tf.keras.layers.Dense(units=hp.Int(f"neurons_{i}", min_value=100, max_value=600), activation='relu', kernel_regularizer='l1_l2'))
+    for i in range(1, hp.Int(f"layers", min_value=2, max_value=7)):
+        model.add(tf.keras.layers.Dense(units=hp.Int(f"neurons_{i}", min_value=100, max_value=600), activation='relu', kernel_regularizer='l1_l2'))
     
-    model.add(tf.keras.layers.Dense(units=hp.Int(f"neurons", min_value=100, max_value=600), activation='relu', kernel_regularizer='l1_l2'))
+    #model.add(tf.keras.layers.Dense(units=hp.Int(f"neurons", min_value=100, max_value=600), activation='relu', kernel_regularizer='l1_l2'))
     
     model.add(tf.keras.layers.Dense(len(ptype), activation = 'sigmoid'))
 
     lr = hp.Float(f'learning rate', min_value=10**-4, max_value=10**-2)
 
-    model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate=lr), 
+    model.compile(optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=lr), 
               loss = tf.keras.losses.SparseCategoricalCrossentropy(), 
               metrics = [tf.keras.metrics.SparseCategoricalAccuracy()],)
     
@@ -93,5 +94,6 @@ model.fit(x=trainx, y=trainy, epochs=50, validation_data=(testx, testy), callbac
 
 ### Save Model
 
-model.save('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Charged_model.keras')
+suffix = '_he_layer'
+model.save('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Charged_model' + suffix + '.keras')
 

@@ -9,7 +9,8 @@ dataset_choice = 1
 dataset_dic = {1:'pure', 2:'single', 3:'multi'}
 data_name = dataset_dic[dataset_choice]
 
-path = '/home/rdube/PID_paper/data/'
+#path = '/home/rdube/PID_paper/data/'
+path = '/projects/mccleary_group/habjan.e/PID_code/data_raw/'
 
 file = data_name + "Training_LE.hdf5"
 filename = path + file
@@ -133,7 +134,8 @@ for label in labels:
 
 ### Save Edited datasets to 'data_processed' folder
 
-new_path = "/home/rdube/PID_paper/data_processed/"
+#new_path = "/home/rdube/PID_paper/data_processed/"
+new_path = "/projects/mccleary_group/habjan.e/PID_code/data_processed/"
 
 ### Save charged datasets
 file = data_name + "Training_LE_sorted_charged.hdf5"

@@ -18,10 +18,17 @@ import shap
 from matplotlib.ticker import LogLocator, NullLocator
 
 
+### Suffix for saved data
+suffix = '_he'
+
+
 ### Import models
 
-charged = tf.keras.models.load_model('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Charged_model_1hidden.keras') #_1hidden.keras')
-neutral = tf.keras.models.load_model('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Neutral_model_best.keras') #_1hidden.keras')
+#charged = tf.keras.models.load_model('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Charged_model_1hidden.keras')
+#neutral = tf.keras.models.load_model('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Neutral_model_best.keras')
+
+charged = tf.keras.models.load_model('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Charged_model_he_layer.keras', compile = False)
+neutral = tf.keras.models.load_model('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Neutral_model_he.keras')
 
 ### Import Data
 
@@ -40,14 +47,14 @@ file = data_name + "Test_LE_sorted_neutral.hdf5"
 filename = data_path + file
 test_neutral = pd.read_hdf(filename, 'event1')
 
-x_charged = pd.DataFrame.to_numpy(test_charged.drop(['ptype', 'group', 'true ptype'], axis=1))
+x_charged = np.array(test_charged.drop(['ptype', 'group', 'true ptype'], axis=1))
 y_charged = np.array(test_charged['ptype']).astype(np.int64)
 group_charged = np.array(test_charged['group']).astype(np.int64)
 true_charged = np.array(test_charged['true ptype']).astype(np.int64)
 
 x_charged = x_charged[:, :38]
 
-x_neutral = pd.DataFrame.to_numpy(test_neutral.drop(['ptype', 'group', 'true ptype'], axis=1))
+x_neutral = np.array(test_neutral.drop(['ptype', 'group', 'true ptype'], axis=1))
 y_neutral = np.array(test_neutral['ptype']).astype(np.int64)
 group_neutral = np.array(test_neutral['group']).astype(np.int64)
 true_neutral = np.array(test_neutral['true ptype']).astype(np.int64)
@@ -104,8 +111,8 @@ PID_plot[PID_plot == 11] = 10
 
 save_path = '/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/pid_mpl/paper_plots/'
 
-np.save(save_path + 'charged_mlp_true.npy', true_plot)
-np.save(save_path + 'charged_mlp_pred.npy',  PID_plot)
+np.save(save_path + 'charged_mlp_true' + suffix + '.npy', true_plot)
+np.save(save_path + 'charged_mlp_pred' + suffix + '.npy',  PID_plot)
 
 ### pick the hypothesis with the highest confidence for neutral particles
 
@@ -120,8 +127,8 @@ max_pred_neut = pred_neut_event[np.arange(len(pred_ind_neut)), pred_ind_neut]
 pred_ptype_neut = np.argmax(np.maximum.reduceat(pred_neut, np.unique(group_neutral, return_index=True)[1]), axis=1) 
 pred_ptype_neut[max_pred_neut < confidence_cut] = 13
 
-np.save(save_path + 'neutral_mlp_true.npy', true_ptype_neut)
-np.save(save_path + 'neutral_mlp_pred.npy',  pred_ptype_neut)
+np.save(save_path + 'neutral_mlp_true' + suffix + '.npy', true_ptype_neut)
+np.save(save_path + 'neutral_mlp_pred' + suffix + '.npy',  pred_ptype_neut)
 
 # Shapley Values
 
@@ -240,5 +247,5 @@ for i in range(len(ptype_dict) - 2):
         df_list.append(pd.concat([piminus_df, muminus_df], ignore_index=True))
 
 
-with open(save_path + 'shapley_values_df.pkl', 'wb') as f:
+with open(save_path + 'shapley_values_df' + suffix + '.pkl', 'wb') as f:
     pickle.dump(df_list, f)
