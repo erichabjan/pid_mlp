@@ -9,7 +9,7 @@ dataset_choice = 1
 dataset_dic = {1:'pure', 2:'single', 3:'multi'}
 data_name = dataset_dic[dataset_choice]
 
-path = '/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/data_raw/'
+path = '/home/rdube/PID_paper/data/'
 
 file = data_name + "Training_LE.hdf5"
 filename = path + file
@@ -77,6 +77,7 @@ test = test.drop(listvals, axis=1)
 
 ### Make ptype label intergers instead of strongs
 train['ptype'] = train['ptype'].astype(np.int64)
+test['true ptype'] = test['true ptype'].astype(np.int64)
 
 ### Make a table of all the Features of interest to sort through overflow values and assign new overflow values
 
@@ -93,16 +94,22 @@ for i in train.drop('ptype', axis=1).columns:
 test['docaTrack'][test['docaTrack'] == 10**6] = np.nan
 train['docaTrack'][train['docaTrack'] == 10**6] = np.nan
 
+## Split test dataset into test and val
+
+val = test[test['group']%40000<20000]
+test = test[test['group']%40000>=20000]
+
 ### Seprate datasets by charged or neutral particles
 
 ### Charged datasets
-test_char = test.loc[np.where(test['q'] != 0)[0]]
-train_char = train.loc[np.where(train['q'] != 0)[0]]
+test_char = test[test['q'] != 0]
+train_char = train[train['q'] != 0]
+val_char = val[val['q'] != 0]
 
 ### Neutral datasets
-test_neut = test.loc[np.where(test['q'] == 0)[0]]
-train_neut = train.loc[np.where(train['q'] == 0)[0]]
-
+test_neut = test[test['q'] == 0]
+train_neut = train[train['q'] == 0]
+val_neut = val[val['q'] == 0]
 ### Replace all nan values with a set overflow value
 
 labels = np.array(train.columns)[1:]
@@ -121,9 +128,12 @@ for label in labels:
     test_char[label] = test_char[label].replace(np.nan, rep_dict[label])
     test_neut[label] = test_neut[label].replace(np.nan, rep_dict[label])
 
+    val_char[label] = val_char[label].replace(np.nan, rep_dict[label])
+    val_neut[label] = val_neut[label].replace(np.nan, rep_dict[label])
+
 ### Save Edited datasets to 'data_processed' folder
 
-new_path = "/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/data_processed/"
+new_path = "/home/rdube/PID_paper/data_processed/"
 
 ### Save charged datasets
 file = data_name + "Training_LE_sorted_charged.hdf5"
@@ -134,6 +144,10 @@ file = data_name + "Test_LE_sorted_charged.hdf5"
 filename = new_path + file
 test_char.to_hdf(filename, 'event1')
 
+file = data_name + "Val_LE_sorted_charged.hdf5"
+filename = new_path + file
+val_char.to_hdf(filename, 'event1')
+
 
 ### Save Neutral datsets
 file = data_name + "Training_LE_sorted_neutral.hdf5"
@@ -143,3 +157,7 @@ train_neut.to_hdf(filename, 'event1')
 file = data_name + "Test_LE_sorted_neutral.hdf5"
 filename = new_path + file
 test_neut.to_hdf(filename, 'event1')
+
+file = data_name + "Val_LE_sorted_neutral.hdf5"
+filename = new_path + file
+val_neut.to_hdf(filename, 'event1')
