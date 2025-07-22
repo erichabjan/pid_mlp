@@ -1,56 +1,34 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
 import pandas as pd
 
-import tensorflow as tf
-import tensorflow_datasets as tfds
 
 from sklearn.metrics import accuracy_score, confusion_matrix
-from sklearn.svm import SVC, LinearSVC, SVR
 
-import seaborn as sns
-from scipy.stats import mode
-
-import multiprocessing as mp
-import math
-
-from sklearn import svm
-from scipy.optimize import minimize, curve_fit
-
-### suffix for saved data
-suffix = '_he'
+from scipy.optimize import minimize
 
 
 ### Import data
+user = "ricky"
 
-base_path = '/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/data_processed/'
+if user == "ricky":
+    base_path = "/home/rdube/PID_paper/data_processed/"
+    save_path = "/home/rdube/PID_paper/pid_mlp/paper_plots/"
+elif user == "eric":
+    base_path = '/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/data_processed/'
+    save_path = '/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/pid_mpl/paper_plots/'
 
-file = "pureTraining_LE_sorted_charged.hdf5"
+file = "pureManualTrain_LE_sorted_charged.hdf5"
 filename = base_path + file
 train_charged = pd.read_hdf(filename, 'event1')
 
-file = "pureTraining_LE_sorted_neutral.hdf5"
-filename = base_path + file
-train_neutral = pd.read_hdf(filename, 'event1')
-
-file = "pureTest_LE_sorted_charged.hdf5"
+file = "pureManualTest_LE_sorted_charged.hdf5"
 filename = base_path + file
 test_charged = pd.read_hdf(filename, 'event1')
-
-file = "pureTest_LE_sorted_neutral.hdf5"
-filename = base_path + file
-test_neutral = pd.read_hdf(filename, 'event1')
 
 ptype_dict = {22:0, 130:1, 2112:2, 2212:3, -2212:4, 321:5, -321:6, 11:7, -11:8, 211:9, -211:10, 13:11, -13:12}
 
 x_charged, y_charged = np.array(test_charged.drop(['ptype', 'group', 'true ptype'], axis=1)), np.array(test_charged['ptype']).astype(np.int64)
 group_charged, true_charged = np.array(test_charged['group']).astype(np.int64), np.array(test_charged['true ptype']).astype(np.int64)
-
-x_neutral, y_neutral = np.array(test_neutral.drop(['ptype', 'group', 'true ptype'], axis=1)), np.array(test_neutral['ptype']).astype(np.int64)
-group_neutral, true_neutral = np.array(test_neutral['group']).astype(np.int64), np.array(test_neutral['true ptype']).astype(np.int64)
-
-y_neutral, true_neutral = np.array([ptype_dict[y_neutral[i]] for i in range(len(y_neutral))]), np.array([ptype_dict[true_neutral[i]] for i in range(len(true_neutral))])
 y_charged, true_charged = np.array([ptype_dict[y_charged[i]] for i in range(len(y_charged))]), np.array([ptype_dict[true_charged[i]] for i in range(len(true_charged))])
 
 ### Make arrays for p-dedx
@@ -511,15 +489,13 @@ manual_c[sorted_group_ind[u_count == 1]] = PID_pred[manual_bool][u_group_ind][u_
 #manual_c[sorted_group_ind[u_count > 1]] = 13
 manual_c[manual_c == 0] = 13
 
-save_path = '/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/pid_mpl/paper_plots/'
-
-np.save(save_path + 'true_manual_pid' + suffix + '.npy', true_c)
-np.save(save_path + 'predicted_manual_pid' + suffix + '.npy', manual_c)
+np.save(save_path + 'true_manual_pid.npy', true_c)
+np.save(save_path + 'predicted_manual_pid.npy', manual_c)
 
 p = np.array(np.sqrt(test_charged['px']**2 + test_charged['py']**2 + test_charged['pz']**2))
 dedx = np.array(test_charged['dEdxCDC'])
 
-np.save(save_path + 'charged_momentum' + suffix + '.npy', p)
-np.save(save_path + 'charged_dedx' + suffix + '.npy', dedx)
+np.save(save_path + 'charged_momentum.npy', p)
+np.save(save_path + 'charged_dedx.npy', dedx)
 
-np.save(save_path + 'manual_pid_cuts' + suffix + '.npy', result.x)
+np.save(save_path + 'manual_pid_cuts.npy', result.x)
