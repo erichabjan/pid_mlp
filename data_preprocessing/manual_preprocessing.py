@@ -75,8 +75,8 @@ for label, overflow in overflow_dict.items():
 
 file = data_name + "ManualTrain_LE_sorted_charged.hdf5"
 filename = new_path + file
-train_charged.to_hdf(filename, 'event1')
+train_charged.to_hdf(filename, 'event1', complevel=9)
 
 file = data_name + "ManualTest_LE_sorted_charged.hdf5"
 filename = new_path + file
-test_charged.to_hdf(filename, 'event1')
+test_charged.to_hdf(filename, 'event1', complevel=9)

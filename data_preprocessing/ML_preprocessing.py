@@ -55,10 +55,10 @@ test = test[test['group']%40000>=20000]
 
 
 rep_dict = {'E': -5, 'px':-500, 'py':-500, 'pz':-500, 'q':-10, 'E1E9':-5, 'E9E25': -5, 'docaTrack':-5, 'preshowerE':-5, 'sigLong': -5, 
-            'sigTrans':-5, 'sigTheta':-5, 'E_L2':-5, 'E_L3':-5, 'E_L4':-5, 'dEdxCDC':-5, 'dEdxFDC':-5, 'tShower': -10, 'tShowerBCAL': -10, 'tShowerFCAL': -10, 
+            'sigTrans':-5, 'sigTheta':-5, 'E_L2':-5, 'E_L3':-5, 'E_L4':-5, 'dEdxCDC':-5, 'dEdxFDC':-5, 'tShower': -10, 
             'thetac':-5, 'bCalPathLength':-5, 'fCalPathLength':-5, 'dEdxTOF':-5, 'tofTOF':-5, 'pathLengthTOF':-5, 'dEdxSc': -5, 'pathLengthSc':-100, 
             'tofSc':-100, 'xShower': -500, 'yShower':-500, 'zShower':-500, 'xTrack':-500, 'yTrack':-500, 'zTrack':-500, 'CDChits':-5, 
-            'FDChits':-5, 'DOCA':-5, 'deltaz':-100, 'deltaphi':-10 , 'tFlightSc':-10, 'tFlightBCAL':-10, 'tFlightTOF':-10, 'tFlightFCAL':-10}
+            'FDChits':-5, 'DOCA':-5, 'deltaz':-100, 'deltaphi':-10 }
 
 
 for label, overflow in rep_dict.items():
@@ -81,26 +81,26 @@ val_neut = val[val['q'] == 0]
 ### Save charged datasets
 file = data_name + "Training_LE_sorted_charged.hdf5"
 filename = new_path + file
-train_char.to_hdf(filename, 'event1')
+train_char.to_hdf(filename, 'event1', complevel=9)
 
 file = data_name + "Test_LE_sorted_charged.hdf5"
 filename = new_path + file
-test_char.to_hdf(filename, 'event1')
+test_char.to_hdf(filename, 'event1', complevel=9)
 
 file = data_name + "Val_LE_sorted_charged.hdf5"
 filename = new_path + file
-val_char.to_hdf(filename, 'event1')
+val_char.to_hdf(filename, 'event1', complevel=9)
 
 
 ### Save Neutral datsets
 file = data_name + "Training_LE_sorted_neutral.hdf5"
 filename = new_path + file
-train_neut.to_hdf(filename, 'event1')
+train_neut.to_hdf(filename, 'event1', complevel=9)
 
 file = data_name + "Test_LE_sorted_neutral.hdf5"
 filename = new_path + file
-test_neut.to_hdf(filename, 'event1')
+test_neut.to_hdf(filename, 'event1', complevel=9)
 
 file = data_name + "Val_LE_sorted_neutral.hdf5"
 filename = new_path + file
-val_neut.to_hdf(filename, 'event1')
+val_neut.to_hdf(filename, 'event1', complevel=9)
