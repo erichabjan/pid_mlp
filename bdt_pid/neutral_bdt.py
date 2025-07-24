@@ -1,16 +1,12 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
-from scipy import stats
-import time
 import xgboost as xgb
-from xgboost.callback import TrainingCallback
 import optuna
+from early_stopping_callback import PruneAndEarlyStop
 
 from sklearn.metrics import accuracy_score, confusion_matrix
 
 import seaborn as sns
-import joblib
 
 ### Import data
 
@@ -34,34 +30,35 @@ ptype = [22,130,2112]
 
 ## Splitting into x and y
 train['ptype'] = train['ptype'].astype(int).map(ptype.index)
-trainx = train.drop(columns=['ptype'])
+trainx = train.drop(columns=)
 trainy = train['ptype']
 val['true ptype'] = val['true ptype'].astype(int).map(ptype.index)
 val['ptype'] = val['ptype'].astype(int).map(ptype.index)
-valDMatrix = xgb.DMatrix(val.drop(['ptype', 'group', 'true ptype'], axis=1), label=val['true ptype'])
-trainDMatrix = xgb.DMatrix(train.drop('ptype', axis=1), label=train['ptype'])
+valDMatrix = xgb.DMatrix(val.drop(['ptype', 'group', 'true ptype','px', 'py', 'pz', 'q', 'dEdxCDC', 'dEdxFDC', 'thetac', 'bCalPathLength', 'fCalPathLength', 'dEdxTOF', 'tofTOF', 'pathLengthTOF', 'dEdxSc', 'pathLengthSc', 'tofSc', 'xTrack', 'yTrack', 'zTrack', 'CDChits', 'FDChits', 'DOCA', 'deltaz', 'deltaphi'], axis=1), label=val['true ptype'])
+trainDMatrix = xgb.DMatrix(trainx, label=trainy)
 
 # Make a model for charged particles
 
 def objective(trial):
+    callbacks = [PruneAndEarlyStop(val_df=val, val_dmatrix=valDMatrix,match_hypothesis=False, n_ptypes=3, trial=trial)]
     params = {
         "objective": "multi:softprob",
         "eval_metric": "mlogloss",
-        "num_class": 10,  # adjust this for your dataset
+        "num_class": 3, 
         "max_depth": trial.suggest_int("max_depth", 3, 15),
-        "learning_rate": trial.suggest_float("learning_rate", 1e-3, 0.3, log=True)
+        "learning_rate": trial.suggest_float("learning_rate", 1e-3, 0.3, log=True),
+        "tree_method": "approx",
+        "device":"cuda"
     }
 
-    model = xgb.train(params, trainDMatrix, trial.suggest_int("n_estimators", 50, 300), evals=[(trainDMatrix,"train"),(valDMatrix, 'val')], early_stopping_rounds=10)
-
-    preds = np.argmax(model.predict(valDMatrix),axis=1)
-    return accuracy_score(val['true ptype'],preds)
+    model = xgb.train(params, trainDMatrix, 500, callbacks=callbacks)
+    return callbacks[0].latest_score
 
 # Use Hyperband to prune bad trials early
-pruner = optuna.pruners.HyperbandPruner(min_resource=50, max_resource=300, reduction_factor=3)
+pruner = optuna.pruners.HyperbandPruner(min_resource=50, max_resource=500, reduction_factor=3)
 
 study = optuna.create_study(direction="maximize", pruner=pruner)
-study.optimize(objective, n_trials=50)
+study.optimize(objective, n_trials=100)
 
 # Train final model on full training set
 best_params = study.best_trial.params
@@ -69,12 +66,12 @@ best_params.update({
     "objective": "multi:softprob",
     "num_class": len(ptype),
     "eval_metric": "mlogloss",
-    "use_label_encoder": False,
-    "verbosity": 2
+    "verbosity": 2,
+    "tree_method": "approx",
+    "device":"cuda"
 })
 
-final_model = xgb.XGBClassifier(**best_params)
-final_model.fit(trainx, trainy)
+final_model = xgb.train(best_params, trainDMatrix, 500, callbacks=[PruneAndEarlyStop(val_df=val, val_dmatrix=valDMatrix,match_hypothesis=False, n_ptypes=3)])
 
 # Save the model
-joblib.dump(final_model, "/home/rdube/PID_paper/results/neutral_model_bdt.joblib")
+final_model.save_model("/home/rdube/PID_paper/results/neutral_model_bdt.json")
