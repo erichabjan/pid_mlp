@@ -72,9 +72,9 @@ train_char = train[train['q'] != 0]
 val_char = val[val['q'] != 0]
 
 ### Neutral datasets
-test_neut = test[test['q'] == 0]
-train_neut = train[train['q'] == 0]
-val_neut = val[val['q'] == 0]
+test_neut = test[test['q'] == 0].drop(columns=['px', 'py', 'pz', 'q', 'dEdxCDC', 'dEdxFDC', 'thetac', 'bCalPathLength', 'fCalPathLength', 'dEdxTOF', 'tofTOF', 'pathLengthTOF', 'dEdxSc', 'pathLengthSc', 'tofSc', 'xTrack', 'yTrack', 'zTrack', 'CDChits', 'FDChits', 'DOCA', 'deltaz', 'deltaphi'])
+train_neut = train[train['q'] == 0].drop(columns=['px', 'py', 'pz', 'q', 'dEdxCDC', 'dEdxFDC', 'thetac', 'bCalPathLength', 'fCalPathLength', 'dEdxTOF', 'tofTOF', 'pathLengthTOF', 'dEdxSc', 'pathLengthSc', 'tofSc', 'xTrack', 'yTrack', 'zTrack', 'CDChits', 'FDChits', 'DOCA', 'deltaz', 'deltaphi'])
+val_neut = val[val['q'] == 0].drop(columns=['px', 'py', 'pz', 'q', 'dEdxCDC', 'dEdxFDC', 'thetac', 'bCalPathLength', 'fCalPathLength', 'dEdxTOF', 'tofTOF', 'pathLengthTOF', 'dEdxSc', 'pathLengthSc', 'tofSc', 'xTrack', 'yTrack', 'zTrack', 'CDChits', 'FDChits', 'DOCA', 'deltaz', 'deltaphi'])
 
 ### Save Edited datasets to 'data_processed' folder
 
