@@ -64,6 +64,7 @@ rep_dict = {'E': -5, 'px':-500, 'py':-500, 'pz':-500, 'q':-10, 'E1E9':-5, 'E9E25
 for label, overflow in rep_dict.items():
     train[label] = train[label].fillna(overflow)
     test[label] = test[label].fillna(overflow)
+    val[label] = val[label].fillna(overflow)
 
 
 ### Charged datasets
