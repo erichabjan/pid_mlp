@@ -9,7 +9,7 @@ dataset_choice = 1
 dataset_dic = {1:'pure', 2:'single', 3:'multi'}
 data_name = dataset_dic[dataset_choice]
 
-user = 'ricky'
+user = 'eric'
 
 if user == 'ricky':
     path = '/home/rdube/PID_paper/data/'

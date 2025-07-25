@@ -17,40 +17,84 @@ dataset_choice = 1
 dataset_dic = {1:'pure', 2:'single', 3:'multi'}
 data_name = dataset_dic[dataset_choice]
 
-base_path = '/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/data_processed/'
+base_path = '/projects/mccleary_group/habjan.e/PID_code/data_processed/'
 
 file = data_name + "Training_LE_sorted_neutral.hdf5"
 filename = base_path + file
 train = pd.read_hdf(filename, 'event1')
 
-file = data_name + "Test_LE_sorted_neutral.hdf5"
+file = data_name + "Val_LE_sorted_neutral.hdf5"
 filename = base_path + file
-test = pd.read_hdf(filename, 'event1')
+val = pd.read_hdf(filename, 'event1')
 
 trainx, trainy = np.array(train.drop('ptype', axis=1)), np.array(train['ptype']).astype(np.int64)
-testx, testy = np.array(test.drop(['ptype', 'group', 'true ptype'], axis=1)), np.array(test['true ptype']).astype(np.int64)
-
-group_test = np.array(test['group']).astype(np.int64)
+valx, valy = np.array(val.drop(['ptype', 'group', 'true ptype'], axis=1)), np.array(val['true ptype']).astype(np.int64)
+val_group = np.array(val['group']).astype(np.int64)
 
 ### Replace particle tags with integers
 
 ptype = {22:0, 130:1, 2112:2}
 
 trainy = np.array([ptype[trainy[i]] for i in range(len(trainy))])
-testy = np.array([ptype[testy[i]] for i in range(len(testy))])
+valy = np.array([ptype[valy[i]] for i in range(len(valy))])
+
+### Define a costum validation loss function
+
+def val_hypothesis_matched(pred_neut, valy, val_group):
+
+    confidence_cut = 0.4
+    ### Classify particles for each event using highest confidence
+    groups, true_group_ind = np.unique(val_group, return_index=True)
+    true_ptype_neut = valy[true_group_ind]
+
+    pred_neut_event = np.maximum.reduceat(pred_neut, np.unique(val_group, return_index=True)[1])
+    pred_ind_neut = np.argmax(np.maximum.reduceat(pred_neut, np.unique(val_group, return_index=True)[1]), axis=1)
+    max_pred_neut = pred_neut_event[np.arange(len(pred_ind_neut)), pred_ind_neut]
+
+    pred_ptype_neut = np.argmax(np.maximum.reduceat(pred_neut, np.unique(val_group, return_index=True)[1]), axis=1)
+    pred_ptype_neut[max_pred_neut < confidence_cut] = 13
+
+    events = true_ptype_neut.shape[0]
+    correct = np.where(true_ptype_neut == pred_ptype_neut)[0].shape[0]
+
+    return correct / events
+
+### Class for event level classification
+
+class EventLevelValAcc(tf.keras.callbacks.Callback):
+    def __init__(self, x_val, y_val, group_val):
+        super().__init__()
+        self.x_val = x_val
+        self.y_val = y_val
+        self.group_val = group_val
+
+    def on_epoch_end(self, epoch, logs=None):
+
+        pred_neut = self.model.predict(self.x_val, verbose=0)
+
+        ev_acc = val_hypothesis_matched(pred_neut, self.y_val, self.group_val)
+
+        logs = logs or {}
+        logs["val_event_acc"] = ev_acc
+
+        print(f" — val_event_acc: {ev_acc:.4f}")
+
+### Define callback
+
+ev_callback = EventLevelValAcc(valx, valy, val_group)
 
 ### Convert data into TensorFlow objects
 
 tf_train = tf.data.Dataset.from_tensor_slices((trainx, trainy)).cache()
-tf_test = tf.data.Dataset.from_tensor_slices((testx, testy)).cache()
+tf_val = tf.data.Dataset.from_tensor_slices((valx, valy)).cache()
 
 tf_train = tf_train.shuffle(len(tf_train))
 
 tf_train = tf_train.batch(128)
-tf_test = tf_test.batch(128)
+tf_val = tf_val.batch(128)
 
 tf_train = tf_train.prefetch(tf.data.AUTOTUNE)
-tf_test = tf_test.prefetch(tf.data.AUTOTUNE)
+tf_val = tf_val.prefetch(tf.data.AUTOTUNE)
 
 # Make a model for neutral particles
 
@@ -59,40 +103,55 @@ tf_test = tf_test.prefetch(tf.data.AUTOTUNE)
 def model_func(hp):
     model = tf.keras.models.Sequential()
 
-    for i in range(1, hp.Int(f"layers", min_value=1, max_value=5)):
+    for i in range(1, hp.Int(f"layers", min_value=1, max_value=7)):
         model.add(tf.keras.layers.Dense(units=hp.Int(f"neurons_{i}", min_value=100, max_value=600), activation='relu', kernel_regularizer='l1_l2'))
     
     #model.add(tf.keras.layers.Dense(units=hp.Int(f"neurons", min_value=50, max_value=1000), activation='relu', kernel_regularizer='l1_l2'))
     
-    model.add(tf.keras.layers.Dense(len(ptype), activation = 'sigmoid'))
+    model.add(tf.keras.layers.Dense(len(ptype), activation = 'softmax'))
 
-    lr = hp.Float(f'learning rate', min_value=10**-4, max_value=10**-2)
+    lr = hp.Float(f'learning rate', min_value=10**-4, max_value=10**-2, sampling="LOG")
 
     model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate=lr), 
-              loss = tf.keras.losses.SparseCategoricalCrossentropy(), 
-              metrics = [tf.keras.metrics.SparseCategoricalAccuracy()],)
+                  loss = tf.keras.losses.SparseCategoricalCrossentropy(),)
     
     return model
 
+epochs = 10
+
 ### Define tuner and callback
 
-tuner = kt.Hyperband(model_func, objective=kt.Objective('val_sparse_categorical_accuracy', direction='max'), 
-                     factor=10, directory='neutral_model_dir', project_name='intro_to_kt')
+tuner = kt.Hyperband(model_func, 
+                     objective=kt.Objective("val_event_acc", direction="max"), 
+                     max_epochs = epochs, 
+                     factor=3,
+                     hyperband_iterations=3, 
+                     directory='neutral_model_dir', 
+                     project_name='intro_to_kt')
 
-callback = tf.keras.callbacks.EarlyStopping(monitor='loss', min_delta=0.01, patience=5)
+early_stop = tf.keras.callbacks.EarlyStopping(monitor="val_event_acc", mode="max", min_delta=0.001, patience=5)
 
 ### Optimize hyperparameters
 
-tuner.search(tf_train, epochs=50, validation_data=tf_test, callbacks=[callback], verbose = 1)
+tuner.search(tf_train, 
+             epochs=epochs, 
+             validation_data=tf_val, 
+             callbacks=[ev_callback, early_stop], 
+             verbose = 1)
+
 best_hps=tuner.get_best_hyperparameters(num_trials=1)[0]
 
 ### Train model
 
-callback = tf.keras.callbacks.EarlyStopping(monitor='loss', min_delta=0.005, patience=5)
 model = tuner.hypermodel.build(best_hps)
-model.fit(tf_train, epochs=50, validation_data=tf_test, callbacks=[callback], verbose = 1)
+model.fit(x=trainx, 
+          y=trainy, 
+          epochs= epochs, 
+          validation_data=(valx, valy), 
+          callbacks = [ev_callback, early_stop], 
+          verbose = 1)
 
 ### Save Model
 
-suffix = '_he'
-model.save('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Neutral_model' + suffix + '.keras')
+suffix = '_paper'
+model.save('/projects/mccleary_group/habjan.e/PID_code/Main_analysis/NN_models/Neutral_model' + suffix + '.keras')
