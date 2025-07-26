@@ -14,9 +14,11 @@ user = 'eric'
 if user == 'ricky':
     path = '/home/rdube/PID_paper/data/'
     new_path = "/home/rdube/PID_paper/data_processed/"
+    replace_nans=False
 elif user == "eric":
     path = '/projects/mccleary_group/habjan.e/PID_code/data_raw/'
     new_path = "/projects/mccleary_group/habjan.e/PID_code/data_processed/"
+    replace_nans=True
 
 file = data_name + "Training_LE.hdf5"
 filename = path + file
@@ -60,11 +62,11 @@ rep_dict = {'E': -5, 'px':-500, 'py':-500, 'pz':-500, 'q':-10, 'E1E9':-5, 'E9E25
             'tofSc':-100, 'xShower': -500, 'yShower':-500, 'zShower':-500, 'xTrack':-500, 'yTrack':-500, 'zTrack':-500, 'CDChits':-5, 
             'FDChits':-5, 'DOCA':-5, 'deltaz':-100, 'deltaphi':-10 }
 
-
-for label, overflow in rep_dict.items():
-    train[label] = train[label].fillna(overflow)
-    test[label] = test[label].fillna(overflow)
-    val[label] = val[label].fillna(overflow)
+if replace_nans:
+    for label, overflow in rep_dict.items():
+        train[label] = train[label].fillna(overflow)
+        test[label] = test[label].fillna(overflow)
+        val[label] = val[label].fillna(overflow)
 
 
 ### Charged datasets
