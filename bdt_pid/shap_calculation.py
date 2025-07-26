@@ -23,7 +23,6 @@ class ShapExplainer:
             self.data_to_explain = temp_data_to_explain[temp_data_to_explain.index % 20000 < n_explain_per_particle].reset_index(drop=True).to_numpy()
         elif isinstance(self.model, xgb.Booster):
             self.model_type = "xgboost"
-            #self.background_data = background_data[background_data.index % 80000 < n_background_per_particle].drop(columns=['ptype']).reset_index(drop=True)
             temp_data_to_explain = data_to_explain[data_to_explain['true ptype'] == data_to_explain['ptype']].drop(columns=['true ptype','ptype','group']).reset_index(drop=True)
             self.data_to_explain = temp_data_to_explain[temp_data_to_explain.index % 20000 < n_explain_per_particle].reset_index(drop=True)
             self.explainer = shap.TreeExplainer(model)
