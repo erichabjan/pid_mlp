@@ -9,4 +9,6 @@
 
 source activate PIDenv
 
-python3 /projects/mccleary_group/habjan.e/PID_code/pid_mlp/data_preprocessing/data_preprocessing.py
+python3 /projects/mccleary_group/habjan.e/PID_code/pid_mlp/data_preprocessing/ML_preprocessing.py
+
+python3 /projects/mccleary_group/habjan.e/PID_code/pid_mlp/data_preprocessing/manual_preprocessing.py
