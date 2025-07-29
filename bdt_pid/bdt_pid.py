@@ -29,7 +29,7 @@ np.save(save_path + 'neutral_bdt_pred.npy',  pred_ptype_neut)
 
 neutral_explainer = ShapExplainer(neutral, test_neutral, None, classes=["gamma","KL","n"])
 neutral_explainer.calculate_shap()
-neutral_explainer.plot_summary(10)
+neutral_explainer.plot_summary(5)
 
 ### Charged Particle PID
 
@@ -56,5 +56,5 @@ np.save(save_path + 'charged_bdt_pred.npy',  pred_ptype_char)
 
 charged_explainer = ShapExplainer(charged, test_charged, None, classes=["p+","K+","mu+pi+","e+","p-","K-","mu-pi-","e-"])
 charged_explainer.calculate_shap()
-charged_explainer.plot_summary(10)
+charged_explainer.plot_summary(5)
 
