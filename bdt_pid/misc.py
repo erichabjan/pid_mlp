@@ -17,7 +17,7 @@ def make_predictions(model, data_raw,match_hypotheses=True, confidence_cut = 0.4
     hypotheses = np.array(data_raw['ptype'])
     groups = np.array(data_raw['group'])
     true_ptypes = np.array(data_raw['true ptype'])
-    data = xgb.DMatrix(data_raw.drop(columns=['ptype','true ptype','group']))
+    data = xgb.DMatrix(data_raw.drop(columns=['ptype','true ptype','group']), missing=float("NaN"))
     preds = model.predict(data)
     if match_hypotheses:
         
