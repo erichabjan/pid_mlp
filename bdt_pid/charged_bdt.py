@@ -2,35 +2,21 @@ import pandas as pd
 import xgboost as xgb
 from early_stopping_callback import PruneAndEarlyStop
 import optuna
+from misc import load_file
 
+ptype = {2212:0, 321:1, -13:2, 211:2, -11:3, -2212:4,-321:5,13:6, -211:6,11:7}
 ### Import data
 
-dataset_choice = 1
-dataset_dic = {1:'pure', 2:'single', 3:'multi'}
-data_name = dataset_dic[dataset_choice]
-
-base_path = '/home/rdube/PID_paper/data_processed/'
-
-file = data_name + "Training_LE_sorted_charged.hdf5"
-filename = base_path + file
-train = pd.read_hdf(filename, 'event1').sample(frac=1)
-
-file = data_name + "Val_LE_sorted_charged.hdf5"
-filename = base_path + file
-val = pd.read_hdf(filename, 'event1')
+train = load_file("charged", "Training",ptype)
+val = load_file("charged","Val",ptype)
 
 ## Defines the order of the particles
 
-ptype = {2212:0, 321:1, -13:2, 211:2, -11:3, -2212:4,-321:5,13:6, -211:6,11:7}
+
 
 ## Splitting into x and y
-train['ptype'] = train['ptype'].astype(int).map(ptype)
-trainx = train.drop(columns=['ptype'])
-trainy = train['ptype']
-val['true ptype'] = val['true ptype'].astype(int).map(ptype)
-val['ptype'] = val['ptype'].astype(int).map(ptype)
-valDMatrix = xgb.DMatrix(val.drop(['ptype', 'group', 'true ptype'], axis=1), label=val['true ptype'])
-trainDMatrix = xgb.DMatrix(train.drop('ptype', axis=1), label=train['ptype'])
+valDMatrix = xgb.DMatrix(val.drop(['ptype', 'group', 'true ptype'], axis=1), label=val['true ptype'], missing = float("NaN"))
+trainDMatrix = xgb.DMatrix(train.drop('ptype', axis=1), label=train['ptype'], missing = float("NaN"))
 
 # Make a model for charged particles
 
@@ -39,7 +25,7 @@ def objective(trial):
     params = {
         "objective": "multi:softprob",
         "eval_metric": "mlogloss",
-        "num_class": 8,  # adjust this for your dataset
+        "num_class": 8,  
         "max_depth": trial.suggest_int("max_depth", 3, 15),
         "learning_rate": trial.suggest_float("learning_rate", 1e-3, 0.3, log=True),
         "tree_method": "approx",

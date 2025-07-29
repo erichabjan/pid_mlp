@@ -8,34 +8,17 @@ from sklearn.metrics import accuracy_score, confusion_matrix
 
 import seaborn as sns
 
+from misc import load_file
+
 ### Import data
-
-dataset_choice = 1
-dataset_dic = {1:'pure', 2:'single', 3:'multi'}
-data_name = dataset_dic[dataset_choice]
-
-base_path = '/home/rdube/PID_paper/data_processed/'
-
-file = data_name + "Training_LE_sorted_neutral.hdf5"
-filename = base_path + file
-train = pd.read_hdf(filename, 'event1').sample(frac=1)
-
-file = data_name + "Val_LE_sorted_neutral.hdf5"
-filename = base_path + file
-val = pd.read_hdf(filename, 'event1')
-
-## Defines the order of the particles
 
 ptype = [22,130,2112]
 
-## Splitting into x and y
-train['ptype'] = train['ptype'].astype(int).map(ptype.index)
-trainx = train.drop(columns=)
-trainy = train['ptype']
-val['true ptype'] = val['true ptype'].astype(int).map(ptype.index)
-val['ptype'] = val['ptype'].astype(int).map(ptype.index)
-valDMatrix = xgb.DMatrix(val.drop(['ptype', 'group', 'true ptype','px', 'py', 'pz', 'q', 'dEdxCDC', 'dEdxFDC', 'thetac', 'bCalPathLength', 'fCalPathLength', 'dEdxTOF', 'tofTOF', 'pathLengthTOF', 'dEdxSc', 'pathLengthSc', 'tofSc', 'xTrack', 'yTrack', 'zTrack', 'CDChits', 'FDChits', 'DOCA', 'deltaz', 'deltaphi'], axis=1), label=val['true ptype'])
-trainDMatrix = xgb.DMatrix(trainx, label=trainy)
+train = load_file("neutral","Training", ptype.index)
+val = load_file("neutral","Val", ptype.index)
+
+valDMatrix = xgb.DMatrix(val.drop(columns=['true ptype','ptype','group']), label=val['true ptype'],missing=float("NaN"))
+trainDMatrix = xgb.DMatrix(train.drop(columns=["ptype"]), label=train['ptype'],missing=float("NaN"))
 
 # Make a model for charged particles
 
