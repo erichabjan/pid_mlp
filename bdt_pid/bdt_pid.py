@@ -10,6 +10,7 @@ import pickle
 import shap
 from matplotlib.ticker import LogLocator, NullLocator
 import xgboost as xgb
+from misc import *
 
 from shap_calculation import ShapExplainer
 from misc import load_file, make_predictions
@@ -30,8 +31,7 @@ np.save(save_path + 'neutral_bdt_pred.npy',  pred_ptype_neut)
 
 neutral_explainer = ShapExplainer(neutral, test_neutral, None, classes=["gamma","KL","n"], n_explain_per_particle=1000)
 neutral_explainer.calculate_shap()
-neutral_explainer.plot_summary(10)
-neutral_explainer.save_shap_values("/home/rdube/PID_paper/pid_mlp/bdt_plots/neutral_shap.npy")
+neutral_explainer.save_shap_values("/home/rdube/PID_paper/pid_mlp/bdt_plots/","neutral")
 
 ### Charged Particle PID
 
@@ -59,6 +59,47 @@ np.save(save_path + 'charged_bdt_pred.npy',  pred_ptype_char)
 
 charged_explainer = ShapExplainer(charged, test_charged, None, classes=["p+","K+","mu+pi+","e+","p-","K-","mu-pi-","e-"], n_explain_per_particle=1000)
 charged_explainer.calculate_shap()
-charged_explainer.plot_summary(10)
-charged_explainer.save_shap_values("/home/rdube/PID_paper/pid_mlp/bdt_plots/charged_shap.npy")
+charged_explainer.save_shap_values("/home/rdube/PID_paper/pid_mlp/bdt_plots/","charged")
 
+"""
+bdt_charged_shap = np.load("/home/rdube/PID_paper/pid_mlp/bdt_plots/charged_shap.npy")
+minX = 0
+maxX = 0
+for i in range(4):
+    plt.sca(ax[i][0])
+    shap.plots.violin(
+        bdt_charged_shap[i],
+        features=charged_explainer.data_to_explain,
+        feature_names=charged_explainer.feature_names,
+        max_display=5,
+        plot_type='layered_violin',
+        plot_size=1,
+        color_bar=False,
+        show=False
+        )
+    plt.title(ptypes[i])
+    if i < 3:
+        plt.xlabel("")
+    else:
+        plt.xlabel("SHAP Value")
+    plotMin, plotMax = ax[i][0].get_xlim()
+    updated = False
+    if minX > plotMin:
+        minX = plotMin
+        updated = True
+    if maxX < plotMax:
+        maxX = plotMax
+        updated=True
+    if updated:
+        for j in range(i):
+            ax[j][0].set_xlim([minX,maxX])
+    
+    
+plt.tight_layout()
+
+ax = plt.gca()
+plt.setp(ax.get_yticklabels(), fontsize=10)
+plt.savefig(f"/home/rdube/PID_paper/pid_mlp/bdt_pid/shap_pos.png", dpi=300)
+plt.close()
+
+"""
