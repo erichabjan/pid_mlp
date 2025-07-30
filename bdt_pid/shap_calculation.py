@@ -16,7 +16,7 @@ class ShapExplainer:
         temp_data_to_explain = data_to_explain.sample(frac=1).drop_duplicates('group').reset_index(drop=False)
         surviving_mask = temp_data_to_explain.index % 20000 < n_explain_per_particle
         self.indices_from_data_to_explain = temp_data_to_explain['index'][surviving_mask].to_numpy()
-        self.data_to_explain = temp_data_to_explain[surviving_mask].drop(columns=[feature for feature in ['true ptype','ptype','group','index'] if feature in data_to_explain.columns]).reset_index(drop=True).to_numpy()
+        self.data_to_explain = temp_data_to_explain[surviving_mask].drop(columns=[feature for feature in ['true ptype','ptype','group','index'] if feature in temp_data_to_explain.columns]).reset_index(drop=True).to_numpy()
         if isinstance(self.model, tf.keras.Model):
             self.model_type = "MLP"
             self.explainer = shap.DeepExplainer(model, self.background_data)
