@@ -13,9 +13,10 @@ class ShapExplainer:
             if feature_to_remove in self.feature_names:
                 self.feature_names.remove(feature_to_remove)
         self.nclasses = len(classes)
-        temp_data_to_explain = data_to_explain.sample(frac=1).drop_duplicates('group').drop(columns=['true ptype','ptype','group']).reset_index(drop=True)
-        self.data_to_explain = temp_data_to_explain[temp_data_to_explain.index % 20000 < n_explain_per_particle].reset_index(drop=True).to_numpy()
-
+        temp_data_to_explain = data_to_explain.sample(frac=1).drop_duplicates('group').reset_index(drop=False)
+        surviving_mask = temp_data_to_explain.index % 20000 < n_explain_per_particle
+        self.indices_from_data_to_explain = temp_data_to_explain['index'][surviving_mask].to_numpy()
+        self.data_to_explain = temp_data_to_explain[surviving_mask].drop(columns=[feature for feature in ['true ptype','ptype','group','index'] if feature in data_to_explain.columns]).reset_index(drop=True).to_numpy()
         if isinstance(self.model, tf.keras.Model):
             self.model_type = "MLP"
             self.explainer = shap.DeepExplainer(model, self.background_data)
@@ -39,7 +40,8 @@ class ShapExplainer:
                 feature_names=self.feature_names,
                 max_display=max_display,
                 plot_type='layered_violin',
-                plot_size=(6.4,4.8)
+                plot_size=(6.4,4.8),
+                use_log_scale=True
             )
             plt.title(self.model_type + " SHAP Summary Plot for " + self.classes[i])
             plt.tight_layout()
@@ -52,8 +54,9 @@ class ShapExplainer:
     def get_mean_shap(self):
         return np.array([np.abs(s).mean(axis=0) for s in self.shap_values])
     
-    def save_shap_values(self,path):
-        np.save(path, self.shap_values)
+    def save_shap_values(self,path, charge):
+        np.save(path + "/"+charge+"_shap.npy", self.shap_values)
+        np.save(path + "/"+charge+"_indices_to_test.npy", self.indices_from_data_to_explain)
 
 
         
