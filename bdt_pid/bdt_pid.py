@@ -61,45 +61,16 @@ charged_explainer = ShapExplainer(charged, test_charged, None, classes=["p+","K+
 charged_explainer.calculate_shap()
 charged_explainer.save_shap_values("/home/rdube/PID_paper/pid_mlp/bdt_plots/","charged")
 
-"""
-bdt_charged_shap = np.load("/home/rdube/PID_paper/pid_mlp/bdt_plots/charged_shap.npy")
-minX = 0
-maxX = 0
-for i in range(4):
-    plt.sca(ax[i][0])
-    shap.plots.violin(
-        bdt_charged_shap[i],
-        features=charged_explainer.data_to_explain,
-        feature_names=charged_explainer.feature_names,
-        max_display=5,
-        plot_type='layered_violin',
-        plot_size=1,
-        color_bar=False,
-        show=False
-        )
-    plt.title(ptypes[i])
-    if i < 3:
-        plt.xlabel("")
-    else:
-        plt.xlabel("SHAP Value")
-    plotMin, plotMax = ax[i][0].get_xlim()
-    updated = False
-    if minX > plotMin:
-        minX = plotMin
-        updated = True
-    if maxX < plotMax:
-        maxX = plotMax
-        updated=True
-    if updated:
-        for j in range(i):
-            ax[j][0].set_xlim([minX,maxX])
-    
-    
-plt.tight_layout()
 
-ax = plt.gca()
-plt.setp(ax.get_yticklabels(), fontsize=10)
-plt.savefig(f"/home/rdube/PID_paper/pid_mlp/bdt_pid/shap_pos.png", dpi=300)
-plt.close()
+### Making SHAP Plots
+charged_indices = np.load("/home/rdube/PID_paper/pid_mlp/bdt_plots/charged_indices_to_test.npy")
+charged_data_to_test = test_charged.loc[charged_indices].drop(columns=['group','ptype','true ptype'])
+charged_shaps = np.load("/home/rdube/PID_paper/pid_mlp/bdt_plots/charged_shap.npy")
+SHAP_plots(charged_shaps, charged_data_to_test, charged_shaps, charged_data_to_test, "pos")
+SHAP_plots(charged_shaps, charged_data_to_test, charged_shaps, charged_data_to_test, "neg")
 
-"""
+
+neutral_indices = np.load("/home/rdube/PID_paper/pid_mlp/bdt_plots/neutral_indices_to_test.npy")
+neutral_data_to_test = test_neutral.loc[neutral_indices].drop(columns=['group','ptype','true ptype'])
+neutral_shaps = np.load("/home/rdube/PID_paper/pid_mlp/bdt_plots/neutral_shap.npy")
+SHAP_plots(neutral_shaps, neutral_data_to_test, neutral_shaps, neutral_data_to_test, "neutral")
