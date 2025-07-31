@@ -55,7 +55,7 @@ def make_predictions(model, data_raw,match_hypotheses=True, confidence_cut = 0.4
         true_ptypes_final = true_ptypes
     return preds_final, true_ptypes_final
 
-
+## This is a modified version of the violin plot from the SHAP library, with added flexibility for using axes and simplified to use the formatting in this paper
 def violin(shap_values, ax, features=None,max_display=5,color="coolwarm",layered_violin_max_num_bins=20,x_label="SHAP Values",show_label_names=True):
     feature_names = features.columns
     features = features.to_numpy()
