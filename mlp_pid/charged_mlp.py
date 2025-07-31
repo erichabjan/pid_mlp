@@ -120,8 +120,7 @@ def model_func(hp):
     
     return model
 
-epochs = 1
-
+epochs = 50
 
 ### Define optimization builder and callback 
 

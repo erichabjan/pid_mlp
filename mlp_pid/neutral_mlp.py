@@ -117,7 +117,7 @@ def model_func(hp):
     
     return model
 
-epochs = 10
+epochs = 50
 
 ### Define tuner and callback
 
