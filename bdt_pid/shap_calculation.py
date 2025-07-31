@@ -19,8 +19,8 @@ class ShapExplainer:
         self.data_to_explain = temp_data_to_explain[surviving_mask].drop(columns=[feature for feature in ['true ptype','ptype','group','index'] if feature in temp_data_to_explain.columns]).reset_index(drop=True).to_numpy()
         if isinstance(self.model, tf.keras.Model):
             self.model_type = "MLP"
+            self.background_data = background_data
             self.explainer = shap.DeepExplainer(model, self.background_data)
-            self.background_data = background_data[background_data.index % 80000 < n_background_per_particle].drop(columns=['ptype']).reset_index(drop=True).to_numpy()
         elif isinstance(self.model, xgb.Booster):
             self.model_type = "BDT"
             self.explainer = shap.TreeExplainer(model)
@@ -57,11 +57,3 @@ class ShapExplainer:
     def save_shap_values(self,path, charge):
         np.save(path + "/"+charge+"_shap.npy", self.shap_values)
         np.save(path + "/"+charge+"_indices_to_test.npy", self.indices_from_data_to_explain)
-
-
-        
-        
-
-
-
-

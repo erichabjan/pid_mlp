@@ -111,7 +111,7 @@ def model_func(hp):
     
     #model.add(tf.keras.layers.Dense(units=hp.Int(f"neurons", min_value=100, max_value=600), activation='relu', kernel_regularizer='l1_l2'))
     
-    model.add(tf.keras.layers.Dense(len(ptype), activation = 'softmax'))
+    model.add(tf.keras.layers.Dense(len(ptype) - 2, activation = 'softmax'))
 
     lr = hp.Float(f'learning rate', min_value=10**-4, max_value=10**-2, sampling="LOG")
 

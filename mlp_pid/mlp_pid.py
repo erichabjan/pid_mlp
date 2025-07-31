@@ -19,16 +19,14 @@ from matplotlib.ticker import LogLocator, NullLocator
 
 
 ### Suffix for saved data
-suffix = '_he'
+suffix = '_paper'
 
 
 ### Import models
 
-#charged = tf.keras.models.load_model('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Charged_model_1hidden.keras')
-#neutral = tf.keras.models.load_model('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Neutral_model_best.keras')
-
-charged = tf.keras.models.load_model('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Charged_model_he_layer.keras', compile = False)
-neutral = tf.keras.models.load_model('/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/Main_analysis/NN_models/Neutral_model_he.keras')
+nn_dirc = '/projects/mccleary_group/habjan.e/PID_code/Main_analysis/NN_models/'
+charged = tf.keras.models.load_model(nn_dirc + 'Charged_model' + suffix + '.keras')
+neutral = tf.keras.models.load_model(nn_dirc + 'Neutral_model' + suffix + '.keras')
 
 ### Import Data
 
@@ -36,8 +34,7 @@ dataset_choice = 1
 dataset_dic = {1:'pure', 2:'single', 3:'multi'}
 data_name = dataset_dic[dataset_choice]
 
-#data_path = os.getcwd().replace('Main_analysis', 'data_processed/')
-data_path = '/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/data_processed/'
+data_path = '/projects/mccleary_group/habjan.e/PID_code/data_processed/'
 
 file = data_name + "Test_LE_sorted_charged.hdf5"
 filename = data_path + file
@@ -52,16 +49,12 @@ y_charged = np.array(test_charged['ptype']).astype(np.int64)
 group_charged = np.array(test_charged['group']).astype(np.int64)
 true_charged = np.array(test_charged['true ptype']).astype(np.int64)
 
-x_charged = x_charged[:, :38]
-
 x_neutral = np.array(test_neutral.drop(['ptype', 'group', 'true ptype'], axis=1))
 y_neutral = np.array(test_neutral['ptype']).astype(np.int64)
 group_neutral = np.array(test_neutral['group']).astype(np.int64)
 true_neutral = np.array(test_neutral['true ptype']).astype(np.int64)
 
-x_neutral = x_neutral[:, :38]
-
-ptype_dict = {22:0, 130:1, 2112:2, 2212:3, -2212:4, 321:5, -321:6, 11:7, -11:8, 211:9, -211:10, 13:11, -13:12}
+ptype_dict = {22:0, 130:1, 2112:2, 2212:3, -2212:4, 321:5, -321:6, 11:7, -11:8, 211:9, -211:10, 13:10, -13:9}
 
 y_neutral, true_neutral = np.array([ptype_dict[y_neutral[i]] for i in range(len(y_neutral))]), np.array([ptype_dict[true_neutral[i]] for i in range(len(true_neutral))])
 y_charged, true_charged = np.array([ptype_dict[y_charged[i]] for i in range(len(y_charged))]), np.array([ptype_dict[true_charged[i]] for i in range(len(true_charged))])
@@ -96,23 +89,15 @@ pred_char_event = np.maximum.reduceat(pred_char, np.unique(group_charged, return
 pred_ind_char = np.argmax(np.maximum.reduceat(pred_char, np.unique(group_charged, return_index=True)[1]), axis=1)
 max_pred_char = pred_char_event[np.arange(len(pred_ind_char)), pred_ind_char]
 
-pred_ptype_char = np.argmax(np.maximum.reduceat(pred_char, np.unique(group_charged, return_index=True)[1]), axis=1) + 3
+pred_ptype_char = np.argmax(np.maximum.reduceat(pred_char, np.unique(group_charged, return_index=True)[1]), axis=1) + 3. # + 3 to account for neutral particles
 pred_ptype_char[max_pred_char < confidence_cut] = 13
 
-### Combine muons and pions
+### Save data
 
-true_plot = np.copy(true_ptype_char)
-true_plot[true_plot == 12] = 9
-true_plot[true_plot == 11] = 10
+save_path = '/projects/mccleary_group/habjan.e/PID_code/pid_mlp/paper_plots/'
 
-PID_plot = np.copy(pred_ptype_char)
-PID_plot[PID_plot == 12] = 9
-PID_plot[PID_plot == 11] = 10
-
-save_path = '/Users/erich/Downloads/UConn/Undergraduate-Research/PID_code/pid_mpl/paper_plots/'
-
-np.save(save_path + 'charged_mlp_true' + suffix + '.npy', true_plot)
-np.save(save_path + 'charged_mlp_pred' + suffix + '.npy',  PID_plot)
+np.save(save_path + 'charged_mlp_true' + suffix + '.npy', true_ptype_char)
+np.save(save_path + 'charged_mlp_pred' + suffix + '.npy',  pred_ptype_char)
 
 ### pick the hypothesis with the highest confidence for neutral particles
 
@@ -132,120 +117,65 @@ np.save(save_path + 'neutral_mlp_pred' + suffix + '.npy',  pred_ptype_neut)
 
 # Shapley Values
 
-### Use SHAP to interpret the most valuable features in each dataset for both models
+### Charged MLP
 
-samplesize = 10**3
-shap_values_neut = []
-shap_values_char = []
+### Number of background per particle
+n_background_per_particle = 10**3
 
-for i in range(13):
-    if i == 0 or i == 1 or i == 2:
-        bacvals_neut = np.random.choice(np.where(true_neutral == i)[0], samplesize, replace=False)
-        background_neut = x_neutral[bacvals_neut]
-        e_neut = shap.DeepExplainer(neutral, background_neut);
-        shap_values_neut_out = e_neut.shap_values(background_neut);
-        shap_values_neut.append(np.array(shap_values_neut_out)[:, :, i])
+### Make mask for background particles
+mask_list = []
+part_list = [2212, -2212, 321, -321, 11, -11, 211, -211]
+true_charged = np.array(test_charged['true ptype'])
 
-    else: 
-        bacvals_char = np.random.choice(np.where(true_charged == i)[0], samplesize, replace=False)
-        background_char = x_charged[bacvals_char]
-        e_char = shap.DeepExplainer(charged, background_char);
-        shap_values_char_out = e_char.shap_values(background_char);
-        shap_values_char.append(np.array(shap_values_char_out)[:, :, i-3])
-        
-### average the shap value for each particle
-
-pshaplist = []
-
-ptypedic = {0:r'$\gamma$', 1:r'$K_{L}^{0}$', 2:r'$n$', 3:r'$p$', 4:r'$\bar{p}$', 
-            5:r'$K^{+}$', 6:r'$K^{-}$', 7:r'$e^{-}$', 8:r'$e^{+}$', 9:r'$\pi^{+}$', 
-            10:r'$\pi^{-}$', 11:r'$\mu^{-}$', 12:r'$\mu^{+}$'}
-
-shap_values_neut_arr = np.array(shap_values_neut)
-shap_values_char_arr = np.array(shap_values_char)
-
-### Take the median value for each feature for each neutral particle
-for j in range(3): 
-    pshaplist.append(np.nanmedian(shap_values_neut_arr[j, :, :], axis=0))
-
-
-### Take the median value for each feature for each charged particle
-for j in range(10):
-    pshaplist.append(np.nanmedian(shap_values_char_arr[j, :, :], axis=0))
+for i in part_list:
     
+    if i == 211:
+        mask_list.append(np.random.choice(np.where((true_charged == i) | (true_charged == -13))[0], n_background_per_particle, replace=False))
     
+    elif i == -211:
+        mask_list.append(np.random.choice(np.where((true_charged == i) | (true_charged == 13))[0], n_background_per_particle, replace=False))
 
-dcols = np.array(['E', 'px', 'py', 'pz', 'q', 'E1E9', 'E9E25', 'docaTrack',
-       'preshowerE', 'sigLong', 'sigTrans', 'sigTheta', 'E_L2', 'E_L3', 'E_L4',
-       'dEdxCDC', 'dEdxFDC', 'tShower', 'thetac', 'bCalPathLength',
-       'fCalPathLength', 'dEdxTOF', 'tofTOF', 'pathLengthTOF', 'dEdxSc',
-       'pathLengthSc', 'tofSc', 'xShower', 'yShower', 'zShower', 'xTrack',
-       'yTrack', 'zTrack', 'CDChits', 'FDChits', 'DOCA', 'deltaz', 'deltaphi'])
+    else:
+        mask_list.append(np.random.choice(np.where(true_charged == i)[0], n_background_per_particle, replace=False))
+
+bg_mask = test_charged.index[np.concatenate(mask_list)]
+
+### Make background array
+
+bg_sample = (
+    test_charged.loc[bg_mask]
+    .drop(columns=['ptype', 'true ptype', 'group'], errors='ignore')
+    .reset_index(drop=True)
+    .to_numpy()
+)
+
+charged_explainer = ShapExplainer(charged, test_charged, bg_sample, classes=["p+","K+","mu+pi+","e+","p-","K-","mu-pi-","e-"], n_explain_per_particle = n_background_per_particle)
+charged_explainer.calculate_shap()
+charged_explainer.save_shap_values("/projects/mccleary_group/habjan.e/PID_code/pid_mlp/paper_plots/", "charged" + suffix)
+
+
+### Neutral MLP
+
+### Make mask for background particles
+mask_list = []
+part_list = [2212, -2212, 321, -321, 11, -11, 211, -211]
+true_neutral = np.array(test_neutral['true ptype'])
+
+for i in part_list:
     
-### Turn shapley values into a pandas dataframe
+    mask_list.append(np.random.choice(np.where(true_neutral == i)[0], n_background_per_particle, replace=False))
 
-shap_dict_gamma = {}
-shap_dict_klong = {}
-shap_dict_neutron = {}
+bg_mask = test_neutral.index[np.concatenate(mask_list)]
 
-shap_dict_proton = {}
-shap_dict_pbar = {}
-shap_dict_kplus = {}
-shap_dict_kminus = {}
+### Make background array
 
-shap_dict_electron = {}
-shap_dict_positron = {}
-shap_dict_piplus = {}
-shap_dict_piminus = {}
+bg_sample = (
+    test_neutral.loc[bg_mask]
+    .drop(columns=['ptype', 'true ptype', 'group'], errors='ignore')
+    .reset_index(drop=True)
+    .to_numpy()
+)
 
-shap_list = [shap_dict_gamma, shap_dict_klong, shap_dict_neutron, 
-             shap_dict_proton, shap_dict_pbar, shap_dict_kplus, shap_dict_kminus, 
-             shap_dict_electron, shap_dict_positron, shap_dict_piplus, shap_dict_piminus]
-
-df_list = []
-
-for i in range(len(ptype_dict) - 2):
-
-    if i == 0 or i == 1 or i == 2:
-        for j in range(len(dcols)):
-            if any(np.concatenate(abs(np.array(shap_values_neut)[:, :, j])) != 0):
-                shap_list[i][dcols[j]] = abs(shap_values_neut[i][:, j])
-        df_list.append(pd.DataFrame(shap_list[i]))
-
-    elif i == 3 or i == 4 or i == 5 or i == 6 or i == 7  or i == 8: 
-        for j in range(len(dcols)):
-            if any(np.concatenate(abs(np.array(shap_values_char)[:, :, j])) != 0):
-                shap_list[i - 3][dcols[j]] = abs(shap_values_char[i- 3][:, j])
-        df_list.append(pd.DataFrame(shap_list[i - 3]))
-
-    elif i == 9: 
-        for j in range(len(dcols)):
-            if any(np.concatenate(abs(np.array(shap_values_char)[:, :, j])) != 0):
-                shap_list[i - 3][dcols[j]] = abs(shap_values_char[i- 3][:, j])
-        piplus_df = pd.DataFrame(shap_list[i - 3])
-
-        muplus_df = {}
-        for j in range(len(dcols)):
-            if any(np.concatenate(abs(np.array(shap_values_char)[:, :, j])) != 0):
-                muplus_df[dcols[j]] = abs(shap_values_char[12 - 3][:, j])
-        muplus_df = pd.DataFrame(muplus_df)
-        
-        df_list.append(pd.concat([piplus_df, muplus_df], ignore_index=True))
-
-    elif i == 10: 
-        for j in range(len(dcols)):
-            if any(np.concatenate(abs(np.array(shap_values_char)[:, :, j])) != 0):
-                shap_list[i - 3][dcols[j]] = abs(shap_values_char[i- 3][:, j])
-        piminus_df = pd.DataFrame(shap_list[i - 3])
-
-        muminus_df = {}
-        for j in range(len(dcols)):
-            if any(np.concatenate(abs(np.array(shap_values_char)[:, :, j])) != 0):
-                muminus_df[dcols[j]] = abs(shap_values_char[11 - 3][:, j])
-        muminus_df = pd.DataFrame(muminus_df)
-        
-        df_list.append(pd.concat([piminus_df, muminus_df], ignore_index=True))
-
-
-with open(save_path + 'shapley_values_df' + suffix + '.pkl', 'wb') as f:
-    pickle.dump(df_list, f)
+neutral_explainer = ShapExplainer(neutral, test_neutral, bg_sample, classes=["gamma","KL","n"], n_explain_per_particle = n_background_per_particle)
+neutral_explainer.calculate_shap()
+neutral_explainer.save_shap_values("/projects/mccleary_group/habjan.e/PID_code/pid_mlp/paper_plots/", "neutral" + suffix)
