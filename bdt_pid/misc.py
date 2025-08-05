@@ -146,8 +146,8 @@ def SHAP_plots(mlp_shap_vals, mlp_data, bdt_shap_vals, bdt_data, charge):
         else:
             BDT_x_label = ""
             MLP_x_label = ""
-        violin(bdt_shap_vals[i],axes[i-index_offset][0],features=bdt_data,x_label=BDT_x_label)
-        violin(mlp_shap_vals[i],axes[i-index_offset][1],features=mlp_data,x_label=MLP_x_label, show_label_names=False)
+        violin(mlp_shap_vals[i],axes[i-index_offset][0],features=mlp_data,x_label=MLP_x_label)
+        violin(bdt_shap_vals[i],axes[i-index_offset][1],features=bdt_data,x_label=BDT_x_label, show_label_names=False)
     #plt.tight_layout()
     fig.subplots_adjust(left=0.12,right=0.98,wspace=0.1,hspace=0.3, bottom=0, top=0.95)
     m = cm.ScalarMappable(cmap=plt.get_cmap("coolwarm"))
