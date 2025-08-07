@@ -24,7 +24,7 @@ suffix = '_paper'
 
 ### Import models
 
-nn_dirc = '/projects/mccleary_group/habjan.e/PID_code/Main_analysis/NN_models/'
+nn_dirc = '/projects/mccleary_group/habjan.e/PID_code/Main_analysis/NN_models/paper_models/'
 charged = tf.keras.models.load_model(nn_dirc + 'Charged_model' + suffix + '.keras')
 neutral = tf.keras.models.load_model(nn_dirc + 'Neutral_model' + suffix + '.keras')
 
@@ -44,12 +44,12 @@ file = data_name + "Test_LE_sorted_neutral.hdf5"
 filename = data_path + file
 test_neutral = pd.read_hdf(filename, 'event1')
 
-x_charged = np.array(test_charged.drop(['ptype', 'group', 'true ptype'], axis=1))
+x_charged = pd.DataFrame.to_numpy(test_charged.drop(['ptype', 'group', 'true ptype'], axis=1))
 y_charged = np.array(test_charged['ptype']).astype(np.int64)
 group_charged = np.array(test_charged['group']).astype(np.int64)
 true_charged = np.array(test_charged['true ptype']).astype(np.int64)
 
-x_neutral = np.array(test_neutral.drop(['ptype', 'group', 'true ptype'], axis=1))
+x_neutral = pd.DataFrame.to_numpy(test_neutral.drop(['ptype', 'group', 'true ptype'], axis=1))
 y_neutral = np.array(test_neutral['ptype']).astype(np.int64)
 group_neutral = np.array(test_neutral['group']).astype(np.int64)
 true_neutral = np.array(test_neutral['true ptype']).astype(np.int64)
@@ -58,18 +58,6 @@ ptype_dict = {22:0, 130:1, 2112:2, 2212:3, -2212:4, 321:5, -321:6, 11:7, -11:8, 
 
 y_neutral, true_neutral = np.array([ptype_dict[y_neutral[i]] for i in range(len(y_neutral))]), np.array([ptype_dict[true_neutral[i]] for i in range(len(true_neutral))])
 y_charged, true_charged = np.array([ptype_dict[y_charged[i]] for i in range(len(y_charged))]), np.array([ptype_dict[true_charged[i]] for i in range(len(true_charged))])
-
-### Make lists of test data
-
-labels = np.array(['E', 'px', 'py', 'pz', 'q', 'E1E9', 'E9E25', 'docaTrack',
-       'preshowerE', 'sigLong', 'sigTrans', 'sigTheta', 'E_L2', 'E_L3', 'E_L4',
-       'dEdxCDC', 'dEdxFDC', 'tShower', 'thetac', 'bCalPathLength',
-       'fCalPathLength', 'dEdxTOF', 'tofTOF', 'pathLengthTOF', 'dEdxSc',
-       'pathLengthSc', 'tofSc', 'xShower', 'yShower', 'zShower', 'xTrack',
-       'yTrack', 'zTrack', 'CDChits', 'FDChits', 'DOCA', 'deltaz', 'deltaphi'])
-
-x_charged = np.transpose(np.array([np.array(test_charged[labels[j]]) for j in range(len(labels))]))
-x_neutral = np.transpose(np.array([np.array(test_neutral[labels[j]]) for j in range(len(labels))]))
 
 ### Make particle identification predictions
 
@@ -96,8 +84,8 @@ pred_ptype_char[max_pred_char < confidence_cut] = 13
 
 save_path = '/projects/mccleary_group/habjan.e/PID_code/pid_mlp/paper_plots/'
 
-np.save(save_path + 'charged_mlp_true' + suffix + '.npy', true_ptype_char)
-np.save(save_path + 'charged_mlp_pred' + suffix + '.npy',  pred_ptype_char)
+np.save(save_path + 'charged_mlp_true.npy', true_ptype_char)
+np.save(save_path + 'charged_mlp_pred.npy',  pred_ptype_char)
 
 ### pick the hypothesis with the highest confidence for neutral particles
 
@@ -112,10 +100,15 @@ max_pred_neut = pred_neut_event[np.arange(len(pred_ind_neut)), pred_ind_neut]
 pred_ptype_neut = np.argmax(np.maximum.reduceat(pred_neut, np.unique(group_neutral, return_index=True)[1]), axis=1) 
 pred_ptype_neut[max_pred_neut < confidence_cut] = 13
 
-np.save(save_path + 'neutral_mlp_true' + suffix + '.npy', true_ptype_neut)
-np.save(save_path + 'neutral_mlp_pred' + suffix + '.npy',  pred_ptype_neut)
+np.save(save_path + 'neutral_mlp_true.npy', true_ptype_neut)
+np.save(save_path + 'neutral_mlp_pred.npy',  pred_ptype_neut)
 
 # Shapley Values
+
+import sys
+sys.path.append("/projects/mccleary_group/habjan.e/PID_code/pid_mlp/bdt_pid")
+from shap_calculation import ShapExplainer
+import xgboost as xgb
 
 ### Charged MLP
 
@@ -158,7 +151,7 @@ charged_explainer.save_shap_values("/projects/mccleary_group/habjan.e/PID_code/p
 
 ### Make mask for background particles
 mask_list = []
-part_list = [2212, -2212, 321, -321, 11, -11, 211, -211]
+part_list = [22, 2112, 130]
 true_neutral = np.array(test_neutral['true ptype'])
 
 for i in part_list:
@@ -179,3 +172,5 @@ bg_sample = (
 neutral_explainer = ShapExplainer(neutral, test_neutral, bg_sample, classes=["gamma","KL","n"], n_explain_per_particle = n_background_per_particle)
 neutral_explainer.calculate_shap()
 neutral_explainer.save_shap_values("/projects/mccleary_group/habjan.e/PID_code/pid_mlp/paper_plots/", "neutral" + suffix)
+
+print('MLP-PID ran successfully!')

@@ -9,4 +9,4 @@
 
 source activate PIDenv
 
-python3 /projects/mccleary_group/habjan.e/PID_code/pid_mlp/mlp_pid/charged_mlp.py
+python3 /projects/mccleary_group/habjan.e/PID_code/pid_mlp/mlp_pid/charged_mlp_new.py

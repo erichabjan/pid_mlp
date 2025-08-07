@@ -55,7 +55,7 @@ def val_hypothesis_matched(pred_char, valy, val_group):
     max_pred_char = pred_char_event[np.arange(len(pred_ind_char)), pred_ind_char]
 
     pred_ptype_char = np.argmax(np.maximum.reduceat(pred_char, np.unique(val_group, return_index=True)[1]), axis=1)
-    pred_ptype_char[max_pred_char < confidence_cut] = 13
+    #pred_ptype_char[max_pred_char < confidence_cut] = 13
 
     events = true_ptype_char.shape[0]
     correct = np.where(true_ptype_char == pred_ptype_char)[0].shape[0]
@@ -106,10 +106,10 @@ tf_val = tf_val.prefetch(tf.data.AUTOTUNE)
 def model_func(hp):
     model = tf.keras.models.Sequential()
 
-    #for i in range(1, hp.Int(f"layers", min_value=1, max_value=4)):
-     #   model.add(tf.keras.layers.Dense(units=hp.Int(f"neurons_{i}", min_value=100, max_value=600), activation='relu', kernel_regularizer='l1_l2'))
+    for i in range(1, hp.Int(f"layers", min_value=1, max_value=3)):
+        model.add(tf.keras.layers.Dense(units=hp.Int(f"neurons_{i}", min_value=25, max_value=400), activation='relu'))
     
-    model.add(tf.keras.layers.Dense(units=hp.Int(f"neurons", min_value=50, max_value=1000), activation='relu', kernel_regularizer='l1_l2'))
+    #model.add(tf.keras.layers.Dense(units=hp.Int(f"neurons", min_value=50, max_value=1000), activation='relu'))
     
     model.add(tf.keras.layers.Dense(len(ptype) - 2, activation = 'softmax'))
 
@@ -125,7 +125,7 @@ epochs = 50
 ### Define optimization builder and callback 
 
 tuner = kt.Hyperband(model_func, 
-                     objective=kt.Objective("val_event_acc", direction="max"), 
+                     objective=kt.Objective("val_event_acc", direction="max"),
                      max_epochs = epochs, 
                      factor=3,
                      hyperband_iterations=1, 
@@ -139,7 +139,7 @@ early_stop = tf.keras.callbacks.EarlyStopping(monitor="val_event_acc", mode="max
 tuner.search(tf_train, 
              epochs= epochs, 
              validation_data=tf_val, 
-             callbacks= [ev_callback, early_stop], 
+             callbacks= [ev_callback, early_stop],
              verbose = 1)
 
 best_hps=tuner.get_best_hyperparameters(num_trials=1)[0]
@@ -150,10 +150,10 @@ model = tuner.hypermodel.build(best_hps)
 model.fit(tf_train, 
           epochs= epochs, 
           validation_data=tf_val, 
-          callbacks = [ev_callback, early_stop], 
+          callbacks= [ev_callback, early_stop],
           verbose = 1)
 
 ### Save Model
 
-suffix = '_paper_1_layer'
+suffix = '_paper'
 model.save('/projects/mccleary_group/habjan.e/PID_code/Main_analysis/NN_models/Charged_model' + suffix + '.keras')
