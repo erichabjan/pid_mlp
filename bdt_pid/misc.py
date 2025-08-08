@@ -65,7 +65,7 @@ def violin(shap_values, ax, features=None,max_display=5,color="coolwarm",layered
     ax.axvline(x=0, color="#999999", zorder=-1)
     num_x_points = 200
     bins = (np.linspace(0, features.shape[0], layered_violin_max_num_bins + 1).round(0).astype("int"))  # the indices of the feature data corresponding to each bin
-    shap_min, shap_max = -10,10
+    shap_min, shap_max = np.quantile(shap_values, [0.001, 0.999]) * 1.5
     x_points = np.linspace(shap_min, shap_max, num_x_points)
     # loop through each feature and plot:
     for pos, ind in enumerate(feature_order):

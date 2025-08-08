@@ -3,6 +3,7 @@ import tensorflow as tf
 import shap
 import numpy as np
 import matplotlib.pyplot as plt
+from tensorflow.keras import Model, layers
 
 class ShapExplainer:
     def __init__(self, model, data_to_explain, background_data, classes = [], n_background_per_particle=200, n_explain_per_particle=1000):
@@ -20,7 +21,24 @@ class ShapExplainer:
         if isinstance(self.model, tf.keras.Model):
             self.model_type = "MLP"
             self.background_data = background_data
-            self.explainer = shap.DeepExplainer(model, self.background_data)
+
+            last_dense   = self.model.layers[-1]
+            penult_output = self.model.layers[-2].output
+
+            W, b = last_dense.get_weights()
+
+            logits_tensor = layers.Dense(
+                units       = last_dense.units,
+                activation  = None,
+                weights     = [W, b],
+                name        = last_dense.name + "_logits"
+            )(penult_output)
+
+            logits_model = Model(inputs=self.model.input,
+                                 outputs=logits_tensor)
+            self.explainer = shap.DeepExplainer(logits_model,
+                                                self.background_data)
+
         elif isinstance(self.model, xgb.Booster):
             self.model_type = "BDT"
             self.explainer = shap.TreeExplainer(model)
