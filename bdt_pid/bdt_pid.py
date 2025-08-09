@@ -60,33 +60,3 @@ np.save(save_path + 'charged_bdt_pred.npy',  pred_ptype_char)
 charged_explainer = ShapExplainer(charged, test_charged, None, classes=["p+","K+","mu+pi+","e+","p-","K-","mu-pi-","e-"], n_explain_per_particle=1000)
 charged_explainer.calculate_shap()
 charged_explainer.save_shap_values("/home/rdube/PID_paper/pid_mlp/bdt_plots/","charged")
-
-
-### Making SHAP Plots
-
-repo_dirc = '/home/rdube/PID_paper/pid_mlp/'
-
-# Load BDT charged arrays
-charged_indices_bdt = np.load(repo_dirc + "bdt_plots/charged_indices_to_test.npy")
-charged_data_to_test_bdt = test_charged.loc[charged_indices_bdt].drop(columns=['group','ptype','true ptype'])
-charged_shaps_bdt = np.load(repo_dirc + "bdt_plots/charged_shap.npy")
-
-# Load MLP charged arrays
-charged_indices_mlp = np.load(repo_dirc + "paper_plots/charged_indices_to_test.npy")
-charged_data_to_test_mlp = test_charged.loc[charged_indices_mlp].drop(columns=['group','ptype','true ptype'])
-charged_shaps_mlp = np.load(repo_dirc + "paper_plots/charged_shap.npy")
-
-SHAP_plots(charged_shaps_mlp, charged_data_to_test_mlp, charged_shaps_bdt, charged_data_to_test_bdt, "pos")
-SHAP_plots(charged_shaps_mlp, charged_data_to_test_mlp, charged_shaps_bdt, charged_data_to_test_bdt, "neg")
-
-# Load BDT neutralarrays
-neutral_indices_bdt = np.load(repo_dirc + "bdt_plots/neutral_indices_to_test.npy")
-neutral_data_to_test_bdt = test_neutral.loc[neutral_indices_bdt].drop(columns=['group','ptype','true ptype'])
-neutral_shaps_bdt = np.load(repo_dirc + "bdt_plots/neutral_shap.npy")
-
-# Load MLP neutral arrays
-neutral_indices_mlp = np.load(repo_dirc + "paper_plots/neutral_indices_to_test.npy")
-neutral_data_to_test_mlp = test_neutral.loc[neutral_indices_mlp].drop(columns=['group','ptype','true ptype'])
-neutral_shaps_mlp = np.load(repo_dirc + "paper_plots/neutral_shap.npy")
-
-SHAP_plots(neutral_shaps_mlp, neutral_data_to_test_mlp, neutral_shaps_bdt, neutral_data_to_test_bdt, "neutral")
