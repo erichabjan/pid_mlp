@@ -92,14 +92,8 @@ def violin(shap_values, ax, features=None,max_display=5,color="coolwarm",layered
         # --- KDE Calculation ---
         all_ys = []
         colors = []
-        
-        # 2. Handle NaN data first (will be the first layer, colored gray)
-        if len(nan_shaps) > 1:
-            nan_kde = gaussian_kde(nan_shaps + np.random.normal(loc=0, scale=0.001, size=nan_shaps.shape[0]))(x_points)
-            nan_kde *= len(nan_shaps) # Scale by number of points
-            mcolors.to_rgba('gray') # Assign gray color for NaNs
             
-        # 3. Handle non-NaN data (colored layers)
+        # 2. Handle non-NaN data (colored layers)
         if len(shap_values_non_nan) > 1:
             # Decide binning strategy for non-NaN data
             unique, counts = np.unique(feature_non_nan, return_counts=True)
@@ -130,6 +124,12 @@ def violin(shap_values, ax, features=None,max_display=5,color="coolwarm",layered
                 all_ys.append(kde)
                 colors.append(cmap(i / (nbins - 1) if nbins > 1 else 0.5))
 
+        # 3. Handle NaN data  (will be the last layer, colored gray)
+        if len(nan_shaps) > 1:
+            nan_kde = gaussian_kde(nan_shaps + np.random.normal(loc=0, scale=0.001, size=nan_shaps.shape[0]))(x_points)
+            nan_kde *= len(nan_shaps) # Scale by number of points
+            all_ys.append(nan_kde)
+            colors.append(mcolors.to_rgba('gray')) # Assign gray color for NaNs
         # 4. PLOTTING
         if not all_ys: # If no data to plot for this feature, skip
             continue
@@ -171,7 +171,6 @@ def SHAP_plots(mlp_shap_vals, mlp_data, bdt_shap_vals, bdt_data, charge):
         bdt_indices = [0,1,2,3]
         mlp_indices = [0,2,6,5]
         classes = [r'$p$',r'$K^{+}$',r'$\pi^{+}$ | $\mu^{+}$', r'$e^{+}$']
-        index_offset=0
     elif charge=="neg":
         nClasses = 4
         bdt_indices = [4,5,6,7]
@@ -215,7 +214,7 @@ def SHAP_plots(mlp_shap_vals, mlp_data, bdt_shap_vals, bdt_data, charge):
     rel_pos_y = (aboveBox.y0 - belowBox.y1)/2 *1/5
     for j in range(nClasses-1,-1,-1):
         leftBox = axes[j][0].get_position()
-        fig.text(leftBox.x1+rel_pos_x, leftBox.y1+rel_pos_y, "SHAP Values For: " + classes[index_offset+j], ha='center', va='center', fontsize=13)
+        fig.text(leftBox.x1+rel_pos_x, leftBox.y1+rel_pos_y, "SHAP Values For: " + classes[j], ha='center', va='center', fontsize=13)
     fig.savefig("/home/rdube/PID_paper/pid_mlp/bdt_plots/" + charge + "_SHAP.png",dpi=300)
 
 
