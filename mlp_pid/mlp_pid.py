@@ -116,9 +116,14 @@ import xgboost as xgb
 n_background_per_particle = 10**3
 
 ### Make mask for background particles
+
+file = data_name + "Training_LE_sorted_charged.hdf5"
+filename = data_path + file
+train_charged = pd.read_hdf(filename, 'event1')
+
 mask_list = []
 part_list = [2212, -2212, 321, -321, 11, -11, 211, -211]
-true_charged = np.array(test_charged['true ptype'])
+true_charged = np.array(train_charged['ptype'])
 
 for i in part_list:
     
@@ -131,13 +136,13 @@ for i in part_list:
     else:
         mask_list.append(np.random.choice(np.where(true_charged == i)[0], n_background_per_particle, replace=False))
 
-bg_mask = test_charged.index[np.concatenate(mask_list)]
+bg_mask = train_charged.index[np.concatenate(mask_list)]
 
 ### Make background array
 
 bg_sample = (
-    test_charged.loc[bg_mask]
-    .drop(columns=['ptype', 'true ptype', 'group'], errors='ignore')
+    train_charged.loc[bg_mask]
+    .drop(columns=['ptype'], errors='ignore')
     .reset_index(drop=True)
     .to_numpy()
 )
@@ -150,21 +155,25 @@ charged_explainer.save_shap_values("/projects/mccleary_group/habjan.e/PID_code/p
 ### Neutral MLP
 
 ### Make mask for background particles
+file = data_name + "Training_LE_sorted_neutral.hdf5"
+filename = data_path + file
+train_neutral = pd.read_hdf(filename, 'event1')
+
 mask_list = []
 part_list = [22, 2112, 130]
-true_neutral = np.array(test_neutral['true ptype'])
+true_neutral = np.array(train_neutral['ptype'])
 
 for i in part_list:
     
     mask_list.append(np.random.choice(np.where(true_neutral == i)[0], n_background_per_particle, replace=False))
 
-bg_mask = test_neutral.index[np.concatenate(mask_list)]
+bg_mask = train_neutral.index[np.concatenate(mask_list)]
 
 ### Make background array
 
 bg_sample = (
-    test_neutral.loc[bg_mask]
-    .drop(columns=['ptype', 'true ptype', 'group'], errors='ignore')
+    train_neutral.loc[bg_mask]
+    .drop(columns=['ptype'], errors='ignore')
     .reset_index(drop=True)
     .to_numpy()
 )
