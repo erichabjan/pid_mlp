@@ -55,6 +55,8 @@ best_params.update({
     "device":"cuda"
 })
 
+print(best_params)
+
 final_model = xgb.train(best_params, trainDMatrix, 500, callbacks=[PruneAndEarlyStop(val_df=val, val_dmatrix=valDMatrix,match_hypothesis=True, n_ptypes=8)])
 
 # Save the model

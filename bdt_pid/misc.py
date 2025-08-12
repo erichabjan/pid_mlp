@@ -58,9 +58,11 @@ def make_predictions(model, data_raw,match_hypotheses=True, confidence_cut = 0.4
 def feature_order(bdt_shap_vals, mlp_shap_vals, nfeatures=5):
     mean_bdt = np.average(np.abs(bdt_shap_vals), axis=0)
     mean_mlp = np.average(np.abs(mlp_shap_vals), axis=0)
-    feature_order = np.argsort((mean_bdt+mean_mlp)/2, axis=0)
-    feature_order = feature_order[-min(nfeatures, len(feature_order)) :]
-    return feature_order
+    mlp_ranking = np.argsort(np.argsort(mean_mlp, axis=0))
+    bdt_ranking = np.argsort(np.argsort(mean_bdt, axis=0))
+    avg_rank =(mlp_ranking+bdt_ranking)/2
+    features_to_use = np.argsort(avg_rank)[-min(nfeatures, len(avg_rank)) :]
+    return features_to_use
 
 # === MODIFIED VIOLIN FUNCTION START ===
 # This is a modified version of the violin plot from the SHAP library, with added flexibility for using axes and simplified to use the formatting in this paper
@@ -70,7 +72,7 @@ def violin(shap_values, ax, features=None,max_display=5,color="coolwarm",layered
     ax.set_xscale("symlog")
     ax.axvline(x=0, color="#999999", zorder=-1)
     
-    num_x_points = 200
+    num_x_points = 500
     # Use nanquantile to be safe from NaNs in SHAP values
     shap_min, shap_max = np.nanquantile(shap_values, [0.001, 0.999]) * 1.5
     if np.isnan(shap_min): shap_min = -1
@@ -165,7 +167,7 @@ def violin(shap_values, ax, features=None,max_display=5,color="coolwarm",layered
     ax.set_ylim(-1, len(feature_order))
     ax.set_xlabel(x_label, fontsize=13)
 
-def SHAP_plots(mlp_shap_vals, mlp_data, bdt_shap_vals, bdt_data, charge):
+def SHAP_plots(mlp_shap_vals, mlp_data, bdt_shap_vals, bdt_data, charge, nfeatures=5):
     if charge == "pos":
         nClasses = 4
         bdt_indices = [0,1,2,3]
@@ -181,7 +183,7 @@ def SHAP_plots(mlp_shap_vals, mlp_data, bdt_shap_vals, bdt_data, charge):
         bdt_indices = [0,1,2]
         mlp_indices = [0,1,2]
         classes = [r'$\gamma$', r'$K_{L}^{0}$', r'$n$']
-    fig, axes = plt.subplots(nrows=nClasses, ncols=2, figsize=(10,11))
+    fig, axes = plt.subplots(nrows=nClasses, ncols=2, figsize=(10,2+nfeatures+nClasses))
     for i in range(nClasses):
         if i == nClasses-1:
             BDT_x_label = "BDT SHAP Values"
@@ -189,7 +191,7 @@ def SHAP_plots(mlp_shap_vals, mlp_data, bdt_shap_vals, bdt_data, charge):
         else:
             BDT_x_label = ""
             MLP_x_label = ""
-        fo = feature_order(bdt_shap_vals[bdt_indices[i]],mlp_shap_vals[mlp_indices[i]])
+        fo = feature_order(bdt_shap_vals[bdt_indices[i]],mlp_shap_vals[mlp_indices[i]], nfeatures=nfeatures)
         violin(mlp_shap_vals[mlp_indices[i]],axes[i][0],features=mlp_data,x_label=MLP_x_label, feature_order=fo)
         violin(bdt_shap_vals[bdt_indices[i]],axes[i][1],features=bdt_data,x_label=BDT_x_label, show_label_names=False, feature_order=fo)
     #plt.tight_layout()
