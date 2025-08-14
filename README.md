@@ -2,8 +2,10 @@ In this project we test the effectiveness of machine learning techniques to iden
 
 Inside of the `mlp_pid` folder the MLP models of the charged and neutral particles are trained and saved using Tensorflow. The classification of particles is then carried out in the `mlp_pid.py` script where arrays of the outputs of this anlysis are saved to the `paper_plots` folder. All MLP results can be recreated in the `paper_plots.ipynb` notebook. 
 
-The BDT models are trained using XGBoost. The classification of particles is then carried out in the `bdt_pid` folder and outputs from this anlysis are saved to the `bdt_plots` folder. All BDT results can be recreated in the `bdt_plots.ipynb` notebook.
+The BDT models are trained using XGBoost. The classification of particles is then carried out in the `bdt_pid` folder and outputs from this anlysis are saved to the `bdt_plots` folder. All BDT results can be recreated in the `bdt_plots.ipynb` notebook. 
+
+We use SHAP (SHapley Additive exPlanations) values to calcualte the feature importance of each label used in the MLP and BDT models. These plots are saved inside of the `bdt_plots` folder.
 
 As for manual PID, all analysis is carried out in the `manual_pid.py` script in the `manual_pid` folder. This includes both dE/dx - p and timing cuts, both of which are optimized in this notebook with the optimal dE/dx - p cuts being saved to the `paper_plots` folder along with the manual PID results. Similarly, all manual PID plots can be recreated in the `paper_plots.ipynb` notebook.
 
-This code accompanies the paper: **"Particle identification in the GlueX detector using a multi-layer perceptron"** ([arXiv:2505.14706](https://arxiv.org/abs/2505.14706)). 
+This code accompanies the paper: **"Particle identification in the GlueX detector with machine learning"** ([arXiv:2505.14706](https://arxiv.org/abs/2505.14706)).
